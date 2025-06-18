@@ -1,7 +1,6 @@
-# Multi-stage Dockerfile for FastAPI application
+# Dockerfile for FastAPI application
 
-# Stage 1: Build stage
-FROM python:3.13-slim as builder
+FROM python:3.13-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -15,30 +14,15 @@ RUN pip install uv
 WORKDIR /app
 
 # Copy dependency files
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml ./
 
-# Install dependencies using uv
-RUN uv sync --frozen
-
-# Stage 2: Runtime stage
-FROM python:3.13-slim as runtime
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
-WORKDIR /app
-
-# Copy Python environment from builder stage
-COPY --from=builder /app/.venv /app/.venv
+# Install dependencies using pip
+RUN pip install --no-cache-dir fastapi[standard] uvicorn
 
 # Copy application code
 COPY server.py ./
 
 # Set environment variables
-ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
 # Expose port 8000 (default FastAPI port)
